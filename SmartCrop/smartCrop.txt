@@ -1,0 +1,98 @@
+ function removeAlpha(imgUrl) {
+    let canvas = document.createElement("canvas"),
+      context = canvas.getContext && canvas.getContext("2d"),
+      data,
+      width,
+      height,
+      length;
+
+    let offset = 4;
+
+    let x1, y1, x2, y2;
+
+    let imgEl = new Image();
+    imgEl.src = imgUrl;
+    imgEl.onload = function () {
+      height = canvas.height =
+        imgEl.naturalHeight || imgEl.offsetHeight || imgEl.height;
+      width = canvas.width =
+        imgEl.naturalWidth || imgEl.offsetWidth || imgEl.width;
+
+      context.drawImage(imgEl, 0, 0);
+
+      try {
+        data = context.getImageData(0, 0, width, height);
+      } catch (e) {
+        /* security error, img on diff domain */
+      }
+
+      length = data.data.length;
+      console.log(data.data);
+      console.log("Length: ", length);
+
+      for (let i = 0; i < length; i += 4) {
+        if (data.data[i + 3] !== 0) {
+          y1 = Math.floor(i / (width * 4));
+          break;
+        }
+      }
+
+      for (let i = 0; i < length; i += 4) {
+        if (data.data[i + 3] !== 0) {
+          const currentX = (i % (width * 4)) / 4;
+          x1 = x1 === undefined ? currentX : Math.min(x1, currentX);
+          x2 = x2 === undefined ? currentX : Math.max(x2, currentX);
+        }
+      }
+
+      for (let i = length - 4; i >= 0; i -= 4) {
+        if (data.data[i + 3] !== 0) {
+          y2 = Math.floor(i / (width * 4));
+          break;
+        }
+      }
+
+      if (x1 - offset > 0) {
+        x1 -= offset;
+      } else {
+        x1 = 0;
+      }
+      if (x2 + offset < width) {
+        x2 += offset;
+      } else {
+        x2 = width;
+      }
+      if (y2 + offset < height) {
+        y2 += offset;
+      } else {
+        y2 = height;
+      }
+      if (y1 - offset > 0) {
+        y1 -= offset;
+      } else {
+        y1 = 0;
+      }
+
+      console.log("Top-left corner: x1 =", x1, ", y1 =", y1);
+      console.log("Bottom-right corner: x2 =", x2, ", y2 =", y2);
+
+      let croppedCanvas = document.createElement("canvas");
+      let croppedContext = croppedCanvas.getContext("2d");
+      croppedCanvas.width = x2 - x1;
+      croppedCanvas.height = y2 - y1;
+      croppedContext.drawImage(
+        imgEl,
+        x1,
+        y1,
+        x2 - x1,
+        y2 - y1,
+        0,
+        0,
+        x2 - x1,
+        y2 - y1,
+      );
+      let croppedImg = document.getElementById("demoImage");
+      croppedImg.src = croppedCanvas.toDataURL();
+      console.log(croppedImg.src);
+    };
+  }
